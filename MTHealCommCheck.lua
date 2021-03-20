@@ -1,8 +1,7 @@
 
 local COMM_PREFIX = "LHC40"
 
-local playerNames = {}
-local healerNames = {}
+local healCommPlayerNames = {}
 
 local raidList = {
 	"raid1", "raid2", "raid3", "raid4", "raid5", "raid6", "raid7", "raid8", "raid9", "raid10",
@@ -47,7 +46,7 @@ end
 
 
 local function getTarget(playerName)
-	for i, player in ipairs(playerNames) do
+	for i, player in ipairs(healCommPlayerNames) do
 		if player.name == playerName then
 			return player, i
 		end
@@ -68,7 +67,7 @@ local function addTarget(playerName)
 	player = {}
 	player.name = playerName
 	player.class = findClass(playerName)
-	table.insert(playerNames, player)
+	table.insert(healCommPlayerNames, player)
 	return true
 end
 
@@ -103,29 +102,22 @@ frame = CreateFrame("Frame")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:SetScript("OnEvent", myEventHandler)
 
+local function getOutputPlayers(listType)
 
-local function printTargest(args)
+	local outputPlayers = {}
 
+	for i, player in ipairs(healCommPlayerNames) do
 
-	if args == nil or args == "" then
-		args = "healer"
-	else 
-		args = string.lower(args)
-	end
+		print(player.name)
+		local insertPlayer = false
 
-	outputPlayers = {}
-
-	for i, player in ipairs(playerNames) do
-
-		insertPlayer = false
-
-		if args == "all" then
+		if listType == "all" then
 			insertPlayer = true
-		elseif args == string.lower(player.class) then
+		elseif listType == string.lower(player.class) then
 			insertPlayer = true 
-		elseif args == "healer" and (player.class == "Priest" or player.class == "Paladin" or player.class == "Druid" or player.class == "Shaman") then
+		elseif listType == "healer" and (player.class == "Priest" or player.class == "Paladin" or player.class == "Druid" or player.class == "Shaman") then
 			insertPlayer = true 
-		elseif args == string.lower(player.name) then
+		elseif listType == string.lower(player.name) then
 			insertPlayer = true 
 		else 
 			insertPlayer = false
@@ -137,9 +129,23 @@ local function printTargest(args)
 
 	end 
 
+	return outputPlayers
+
+end
+
+local function printTargest(args)
+
+	local listType = nil
+	if args == nil or args == "" then
+		listType = "healer"
+	else 
+		listType = string.lower(args)
+	end
+
+	outputPlayers = getOutputPlayers(listType)
 	count = getn(outputPlayers)
 
-	print ("List for ".. args .. " (".. count .. ")")
+	print ("List for ".. listType .. " (".. count .. ")")
 
 	for i, target in ipairs(outputPlayers) do
 		line = target.name .. " (" .. target.class .. ")"
@@ -147,17 +153,46 @@ local function printTargest(args)
 	end
 end
 
+
+local function whisperTargest(args)
+
+	recipient, listType = strsplit(" ", args, 2) 
+
+	if listType == nil or listType == "" then
+		listType = "healer"
+	else 
+		listType = string.lower(listType)
+	end
+
+	outputPlayers = getOutputPlayers(listType)
+	
+	count = getn(outputPlayers)
+
+	--print(recipient)
+	--print ("List for ".. listType .. " (".. count .. ")")
+	SendChatMessage("List for ".. listType .. " (".. count .. ")", "WHISPER", "Common", recipient);
+
+	for i, target in ipairs(outputPlayers) do
+		line = target.name .. " (" .. target.class .. ")"
+		SendChatMessage(line, "WHISPER", nil, recipient);
+		-- print(line)
+	end
+end
+
+
 local function MyAddonCommands(msg, editbox)
 
 	local _, _, cmd, args = string.find(msg, "%s?(%w+)%s?(.*)")
 
-	if cmd == "list" then
+	if cmd == "print" then
 		printTargest(args)
+	elseif cmd == "whisper" then
+		whisperTargest(args)	
 	elseif cmd == "clear" then
-		playerNames = {}
+		healCommPlayerNames = {}
 	else
 		-- If not handled above, display some sort of help message
-		print("Syntax: /mthcc (list|clear)");
+		print("Syntax: /mthcc (print|whisper|clear)");
 	end
 
   end
