@@ -316,7 +316,7 @@ local function MyAddonCommands(msg, editbox)
 		healCommPlayers = {}
 	else
 		-- If not handled above, display some sort of help message
-		print("Syntax: /mthcc (print|whisper|clear)");
+		print("Syntax: /mthcc (print | whisper | clear)");
 	end
 
   end
